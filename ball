@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elastic Ball Simulation</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        #container {
+            position: relative;
+            width: 600px;
+            height: 400px;
+            border: 2px solid black;
+            margin: auto;
+            overflow: hidden;
+            background-color: lightgray;
+        }
+        .ball {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: red;
+        }
+        .controls {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Elastic Ball Simulation</h2>
+    <div id="container"></div>
+    <div class="controls">
+        Time Step: <input type="range" id="timeStep" min="1" max="10" value="5"> <span id="timeStepVal">5</span><br>
+        Gravity: <input type="range" id="gravity" min="0" max="1" step="0.01" value="0.1"> <span id="gravityVal">0.1</span><br>
+        Elasticity: <input type="range" id="elasticity" min="0" max="1" step="0.01" value="0.8"> <span id="elasticityVal">0.8</span>
+    </div>
+    <script>
+        const container = document.getElementById("container");
+        const balls = [];
+        const timeStepInput = document.getElementById("timeStep");
+        const gravityInput = document.getElementById("gravity");
+        const elasticityInput = document.getElementById("elasticity");
+        let timeStep = parseInt(timeStepInput.value);
+        let gravity = parseFloat(gravityInput.value);
+        let elasticity = parseFloat(elasticityInput.value);
+
+        timeStepInput.oninput = () => document.getElementById("timeStepVal").innerText = timeStep = parseInt(timeStepInput.value);
+        gravityInput.oninput = () => document.getElementById("gravityVal").innerText = gravity = parseFloat(gravityInput.value);
+        elasticityInput.oninput = () => document.getElementById("elasticityVal").innerText = elasticity = parseFloat(elasticityInput.value);
+
+        container.addEventListener("click", (e) => {
+            const ball = document.createElement("div");
+            ball.classList.add("ball");
+            const radius = 10;
+            const x = e.clientX - container.offsetLeft - radius;
+            const y = e.clientY - container.offsetTop - radius;
+            const vx = (Math.random() - 0.5) * 5;
+            const vy = (Math.random() - 0.5) * 5;
+            
+            ball.style.left = `${x}px`;
+            ball.style.top = `${y}px`;
+            container.appendChild(ball);
+            balls.push({ element: ball, x, y, vx, vy, radius });
+        });
+
+        function update() {
+            for (let i = 0; i < balls.length; i++) {
+                let b1 = balls[i];
+                b1.vy += gravity;
+                b1.x += b1.vx * (timeStep / 5);
+                b1.y += b1.vy * (timeStep / 5);
+
+                if (b1.x <= 0 || b1.x + 20 >= container.clientWidth) {
+                    b1.vx *= -elasticity;
+                    b1.x = Math.max(0, Math.min(b1.x, container.clientWidth - 20));
+                }
+                if (b1.y <= 0 || b1.y + 20 >= container.clientHeight) {
+                    b1.vy *= -elasticity;
+                    b1.y = Math.max(0, Math.min(b1.y, container.clientHeight - 20));
+                }
+                for (let j = i + 1; j < balls.length; j++) {
+                    let b2 = balls[j];
+                    let dx = b2.x - b1.x;
+                    let dy = b2.y - b1.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 20) {
+                        let angle = Math.atan2(dy, dx);
+                        let speed1 = Math.sqrt(b1.vx * b1.vx + b1.vy * b1.vy);
+                        let speed2 = Math.sqrt(b2.vx * b2.vx + b2.vy * b2.vy);
+                        let dir1 = Math.atan2(b1.vy, b1.vx);
+                        let dir2 = Math.atan2(b2.vy, b2.vx);
+
+                        let newVx1 = speed2 * Math.cos(dir2 - angle);
+                        let newVy1 = speed1 * Math.sin(dir1 - angle);
+                        let newVx2 = speed1 * Math.cos(dir1 - angle);
+                        let newVy2 = speed2 * Math.sin(dir2 - angle);
+
+                        b1.vx = newVx1 * elasticity;
+                        b1.vy = newVy1 * elasticity;
+                        b2.vx = newVx2 * elasticity;
+                        b2.vy = newVy2 * elasticity;
+                    }
+                }
+                b1.element.style.left = `${b1.x}px`;
+                b1.element.style.top = `${b1.y}px`;
+            }
+            requestAnimationFrame(update);
+        }
+        update();
+    </script>
+</body>
+</html>
